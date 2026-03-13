@@ -22,6 +22,7 @@ export type ToolbarButton =
   | 'link'
   | 'unlink'
   | 'image'
+  | 'video'
   | 'table'
   | 'code'
   | 'htmlView'

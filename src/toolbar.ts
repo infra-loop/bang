@@ -35,6 +35,7 @@ export class Toolbar {
     { name: 'link', icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`, title: 'Insert Link', action: () => this.handleLinkInsert() },
     { name: 'unlink', icon: '🚫', title: 'Remove Link', command: 'unlink' },
     { name: 'image', icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`, title: 'Insert Image', action: () => this.handleImageInsert() },
+    { name: 'video', icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><polygon points="10 8 16 12 10 16" fill="currentColor" stroke="none"/></svg>`, title: 'Insert Video', action: () => this.handleVideoInsert() },
     { name: 'table', icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>`, title: 'Insert Table', action: () => this.handleTableInsert() },
     { name: 'htmlView', icon: `&lt;/&gt;`, title: 'Toggle HTML View', action: () => this.toggleHtmlView() },
     { name: 'undo', icon: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>`, title: 'Undo', command: 'undo' },
@@ -87,7 +88,7 @@ export class Toolbar {
       'formatDropdown', '|',
       'bold', 'italic', 'underline', 'fontColor', '|',
       'alignDropdown', '|',
-      'link', 'image', 'table', 'code', 'htmlView'
+      'link', 'image', 'video', 'table', 'code', 'htmlView'
     ];
 
     buttonsToShow.forEach(buttonName => {
@@ -116,6 +117,10 @@ export class Toolbar {
       }
       if (buttonName === 'image') {
         this.container.appendChild(this.createImageButton());
+        return;
+      }
+      if (buttonName === 'video') {
+        this.container.appendChild(this.createVideoButton());
         return;
       }
       if (buttonName === 'table') {
@@ -363,6 +368,78 @@ export class Toolbar {
     };
     urlInput.addEventListener('keydown', handleKeydown);
     altInput.addEventListener('keydown', handleKeydown);
+
+    return this.createPopoverWrapper(config, form);
+  }
+
+  private createVideoButton(): HTMLElement {
+    const config = this.buttonConfigs.find(b => b.name === 'video')!;
+
+    const form = createElement('div', 'bang-popover-form');
+
+    const urlGroup = createElement('div', 'bang-popover-field');
+    const urlLabel = document.createElement('label');
+    urlLabel.textContent = 'Video URL';
+    urlLabel.className = 'bang-popover-label';
+    const urlInput = document.createElement('input');
+    urlInput.type = 'text';
+    urlInput.className = 'bang-popover-input';
+    urlInput.placeholder = 'YouTube, Vimeo, Loom, or direct URL';
+    urlGroup.appendChild(urlLabel);
+    urlGroup.appendChild(urlInput);
+
+    const hint = createElement('div', 'bang-popover-hint');
+    hint.textContent = 'Supports YouTube, Vimeo, Dailymotion, Loom, or direct .mp4/.webm links';
+
+    const actions = createElement('div', 'bang-popover-actions');
+    const insertBtn = document.createElement('button');
+    insertBtn.type = 'button';
+    insertBtn.className = 'bang-popover-btn bang-popover-btn--primary';
+    insertBtn.textContent = 'Insert';
+    const cancelBtn = document.createElement('button');
+    cancelBtn.type = 'button';
+    cancelBtn.className = 'bang-popover-btn';
+    cancelBtn.textContent = 'Cancel';
+
+    actions.appendChild(cancelBtn);
+    actions.appendChild(insertBtn);
+
+    form.appendChild(urlGroup);
+    form.appendChild(hint);
+    form.appendChild(actions);
+
+    const submit = () => {
+      const url = urlInput.value.trim();
+      if (url) {
+        restoreSelection(this.savedRange);
+        this.commands.insertVideo(url);
+      }
+      urlInput.value = '';
+      this.closeActivePopover();
+    };
+
+    insertBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      submit();
+    });
+
+    cancelBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      urlInput.value = '';
+      this.closeActivePopover();
+    });
+
+    urlInput.addEventListener('keydown', (e: KeyboardEvent) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        submit();
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        this.closeActivePopover();
+      }
+    });
 
     return this.createPopoverWrapper(config, form);
   }
@@ -644,6 +721,22 @@ export class Toolbar {
   private handleImageInsert(): void {
     this.savedRange = saveSelection();
     const wrapper = this.buttons.get('image')?.closest('.bang-popover-wrapper');
+    if (wrapper) {
+      const popover = wrapper.querySelector('.bang-popover') as HTMLElement;
+      if (popover) {
+        this.closeActivePopover();
+        this.closeAllDropdowns();
+        popover.style.display = 'block';
+        this.activePopover = popover;
+        const firstInput = popover.querySelector('input') as HTMLInputElement;
+        if (firstInput) firstInput.focus();
+      }
+    }
+  }
+
+  private handleVideoInsert(): void {
+    this.savedRange = saveSelection();
+    const wrapper = this.buttons.get('video')?.closest('.bang-popover-wrapper');
     if (wrapper) {
       const popover = wrapper.querySelector('.bang-popover') as HTMLElement;
       if (popover) {

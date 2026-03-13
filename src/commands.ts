@@ -83,6 +83,59 @@ export class Commands {
     }
   }
 
+  insertVideo(url: string): void {
+    if (!url) return;
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'bang-video-wrapper';
+    wrapper.contentEditable = 'false';
+
+    // Detect provider and build embed
+    const embedUrl = this.getEmbedUrl(url);
+    if (embedUrl) {
+      const iframe = document.createElement('iframe');
+      iframe.src = embedUrl;
+      iframe.setAttribute('frameborder', '0');
+      iframe.setAttribute('allowfullscreen', 'true');
+      iframe.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture');
+      wrapper.appendChild(iframe);
+    } else {
+      // Treat as direct video file URL
+      const video = document.createElement('video');
+      video.src = url;
+      video.controls = true;
+      video.preload = 'metadata';
+      wrapper.appendChild(video);
+    }
+
+    this.insertElement(wrapper);
+
+    // Insert a paragraph after so the user can keep typing
+    const p = document.createElement('p');
+    p.innerHTML = '<br>';
+    wrapper.after(p);
+  }
+
+  private getEmbedUrl(url: string): string | null {
+    // YouTube
+    let match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]+)/);
+    if (match) return `https://www.youtube.com/embed/${match[1]}`;
+
+    // Vimeo
+    match = url.match(/vimeo\.com\/(\d+)/);
+    if (match) return `https://player.vimeo.com/video/${match[1]}`;
+
+    // Dailymotion
+    match = url.match(/dailymotion\.com\/video\/([\w]+)/);
+    if (match) return `https://www.dailymotion.com/embed/video/${match[1]}`;
+
+    // Loom
+    match = url.match(/loom\.com\/share\/([\w]+)/);
+    if (match) return `https://www.loom.com/embed/${match[1]}`;
+
+    return null;
+  }
+
   insertTable(options: TableOptions): void {
     const { rows, cols } = options;
     const table = document.createElement('table');
