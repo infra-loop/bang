@@ -1,7 +1,7 @@
 import { EditorOptions } from './types';
 import { Commands } from './commands';
 import { Toolbar } from './toolbar';
-import { createElement, isSelectionInElement } from './utils';
+import { createElement, isSelectionInElement, formatHtml, highlightHtml } from './utils';
 
 export class BangEditor {
   private container: HTMLElement;
@@ -10,10 +10,14 @@ export class BangEditor {
   private commands: Commands;
   private options: EditorOptions;
   private eventListeners: Map<string, Function[]> = new Map();
+  private isHtmlView: boolean = false;
+  private htmlViewContainer: HTMLElement | null = null;
+  private htmlTextarea: HTMLTextAreaElement | null = null;
+  private htmlHighlight: HTMLElement | null = null;
 
   constructor(selector: string | HTMLElement, options: EditorOptions = {}) {
     this.options = {
-      placeholder: 'Start typing...',
+      placeholder: 'Type something',
       height: '400px',
       minHeight: '200px',
       toolbar: undefined,
@@ -39,6 +43,7 @@ export class BangEditor {
     this.editorElement = this.createEditor();
     this.commands = new Commands(this.editorElement);
     this.toolbar = new Toolbar(this.commands, this.editorElement, this.options.toolbar);
+    this.toolbar.setHtmlViewToggle(() => this.toggleHtmlView());
 
     this.render();
     this.attachEvents();
@@ -48,7 +53,7 @@ export class BangEditor {
     const editor = createElement('div', 'bang-editor-content');
     editor.contentEditable = 'true';
     editor.setAttribute('data-placeholder', this.options.placeholder || '');
-    
+
     if (this.options.height) {
       editor.style.height = this.options.height;
     }
@@ -57,6 +62,93 @@ export class BangEditor {
     }
 
     return editor;
+  }
+
+  private createHtmlView(): HTMLElement {
+    const container = createElement('div', 'bang-html-view');
+
+    if (this.options.height) {
+      container.style.height = this.options.height;
+    }
+    if (this.options.minHeight) {
+      container.style.minHeight = this.options.minHeight;
+    }
+
+    // Highlighted code backdrop
+    const highlight = createElement('pre', 'bang-html-highlight');
+    const highlightCode = createElement('code', 'bang-html-highlight-code');
+    highlight.appendChild(highlightCode);
+    this.htmlHighlight = highlightCode;
+
+    // Transparent textarea for actual editing
+    const textarea = document.createElement('textarea');
+    textarea.className = 'bang-html-textarea';
+    textarea.spellcheck = false;
+    textarea.autocapitalize = 'off';
+    textarea.setAttribute('autocorrect', 'off');
+    this.htmlTextarea = textarea;
+
+    // Sync scroll
+    textarea.addEventListener('scroll', () => {
+      highlight.scrollTop = textarea.scrollTop;
+      highlight.scrollLeft = textarea.scrollLeft;
+    });
+
+    // Sync content on input
+    textarea.addEventListener('input', () => {
+      this.updateHtmlHighlight();
+      // Update the WYSIWYG content live
+      this.editorElement.innerHTML = textarea.value;
+      this.handleChange();
+    });
+
+    container.appendChild(highlight);
+    container.appendChild(textarea);
+
+    return container;
+  }
+
+  private updateHtmlHighlight(): void {
+    if (this.htmlHighlight && this.htmlTextarea) {
+      this.htmlHighlight.innerHTML = highlightHtml(this.htmlTextarea.value) + '\n';
+    }
+  }
+
+  private toggleHtmlView(): void {
+    this.isHtmlView = !this.isHtmlView;
+    this.toolbar.setHtmlViewState(this.isHtmlView);
+
+    if (this.isHtmlView) {
+      // Switch to HTML view
+      if (!this.htmlViewContainer) {
+        this.htmlViewContainer = this.createHtmlView();
+      }
+
+      const formattedHtml = formatHtml(this.editorElement.innerHTML);
+      if (this.htmlTextarea) {
+        this.htmlTextarea.value = formattedHtml;
+      }
+      this.updateHtmlHighlight();
+
+      this.editorElement.style.display = 'none';
+      this.container.appendChild(this.htmlViewContainer);
+      this.htmlTextarea?.focus();
+    } else {
+      // Switch back to WYSIWYG view
+      if (this.htmlTextarea) {
+        this.editorElement.innerHTML = this.htmlTextarea.value;
+      }
+
+      if (this.htmlViewContainer && this.htmlViewContainer.parentNode) {
+        this.htmlViewContainer.parentNode.removeChild(this.htmlViewContainer);
+      }
+
+      this.editorElement.style.display = '';
+      this.editorElement.focus();
+      this.handleChange();
+    }
+
+    this.emit('viewchange', this.isHtmlView ? 'html' : 'wysiwyg');
   }
 
   private render(): void {
@@ -199,6 +291,10 @@ export class BangEditor {
   destroy(): void {
     this.container.innerHTML = '';
     this.eventListeners.clear();
+  }
+
+  isInHtmlView(): boolean {
+    return this.isHtmlView;
   }
 
   // Event system

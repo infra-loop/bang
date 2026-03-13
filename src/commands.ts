@@ -70,9 +70,16 @@ export class Commands {
     this.execute('unlink');
   }
 
-  insertImage(url: string): void {
+  insertImage(url: string, alt?: string): void {
     if (url) {
-      this.execute('insertImage', url);
+      if (alt) {
+        const img = document.createElement('img');
+        img.src = url;
+        img.alt = alt;
+        this.insertElement(img);
+      } else {
+        this.execute('insertImage', url);
+      }
     }
   }
 
@@ -80,7 +87,7 @@ export class Commands {
     const { rows, cols } = options;
     const table = document.createElement('table');
     table.className = 'bang-table';
-    
+
     for (let i = 0; i < rows; i++) {
       const tr = document.createElement('tr');
       for (let j = 0; j < cols; j++) {
@@ -94,23 +101,13 @@ export class Commands {
     this.insertElement(table);
   }
 
-  insertCode(): void {
-    const pre = document.createElement('pre');
-    const code = document.createElement('code');
-    code.className = 'bang-code-block';
-    code.textContent = 'Code here...';
-    pre.appendChild(code);
-    
-    this.insertElement(pre);
-  }
-
   private insertElement(element: HTMLElement): void {
     const selection = window.getSelection();
     if (selection && selection.rangeCount > 0) {
       const range = selection.getRangeAt(0);
       range.deleteContents();
       range.insertNode(element);
-      
+
       // Move cursor after inserted element
       range.setStartAfter(element);
       range.setEndAfter(element);
