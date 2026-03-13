@@ -1,0 +1,39 @@
+{
+  "name": "bang-editor",
+  "version": "1.0.0",
+  "description": "A lightweight TypeScript WYSIWYG editor library",
+  "type": "module",
+  "main": "./dist/bang-editor.umd.cjs",
+  "module": "./dist/bang-editor.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/bang-editor.js",
+      "require": "./dist/bang-editor.umd.cjs",
+      "types": "./dist/index.d.ts"
+    },
+    "./style.css": "./dist/style.css"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -p tsconfig.build.json && vite build",
+    "preview": "vite preview"
+  },
+  "keywords": [
+    "wysiwyg",
+    "editor",
+    "rich-text",
+    "typescript",
+    "contenteditable"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "typescript": "^5.3.3",
+    "vite": "^5.0.10"
+  }
+}

@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BangEditor Demo - WYSIWYG Editor</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: #f5f7fa;
+      padding: 40px 20px;
+      color: #333;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    h1 {
+      font-size: 3em;
+      color: #4a90e2;
+      margin-bottom: 10px;
+    }
+
+    .subtitle {
+      font-size: 1.2em;
+      color: #666;
+      margin-bottom: 20px;
+    }
+
+    .demo-section {
+      background: #fff;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      margin-bottom: 30px;
+    }
+
+    .demo-section h2 {
+      margin-bottom: 20px;
+      color: #333;
+      font-size: 1.5em;
+    }
+
+    .buttons-container {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 20px;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.2s ease;
+    }
+
+    .btn-primary {
+      background: #4a90e2;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #357abd;
+    }
+
+    .btn-secondary {
+      background: #6c757d;
+      color: white;
+    }
+
+    .btn-secondary:hover {
+      background: #5a6268;
+    }
+
+    .btn-success {
+      background: #28a745;
+      color: white;
+    }
+
+    .btn-success:hover {
+      background: #218838;
+    }
+
+    .output-container {
+      margin-top: 20px;
+    }
+
+    .output-label {
+      font-weight: 600;
+      margin-bottom: 10px;
+      color: #333;
+    }
+
+    .output-box {
+      background: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 4px;
+      padding: 15px;
+      font-family: 'Monaco', 'Menlo', monospace;
+      font-size: 12px;
+      color: #333;
+      overflow-x: auto;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .info-box {
+      background: #e7f3ff;
+      border-left: 4px solid #4a90e2;
+      padding: 15px;
+      border-radius: 4px;
+      margin-top: 20px;
+    }
+
+    .info-box p {
+      margin: 5px 0;
+      line-height: 1.6;
+    }
+
+    .info-box code {
+      background: #fff;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-family: 'Monaco', 'Menlo', monospace;
+      font-size: 12px;
+      color: #e83e8c;
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 40px;
+      color: #666;
+      font-size: 14px;
+    }
+
+    @media (max-width: 768px) {
+      h1 {
+        font-size: 2em;
+      }
+
+      .demo-section {
+        padding: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>BangEditor</h1>
+      <p class="subtitle">A lightweight TypeScript WYSIWYG editor library</p>
+    </header>
+
+    <div class="demo-section">
+      <h2>Basic Editor Demo</h2>
+      <div id="editor"></div>
+
+      <div class="buttons-container">
+        <button class="btn btn-primary" onclick="getContent()">Get HTML Content</button>
+        <button class="btn btn-secondary" onclick="getTextContent()">Get Text Content</button>
+        <button class="btn btn-success" onclick="setContent()">Set Sample Content</button>
+        <button class="btn btn-secondary" onclick="clearEditor()">Clear Editor</button>
+        <button class="btn btn-secondary" onclick="disableEditor()">Disable Editor</button>
+        <button class="btn btn-primary" onclick="enableEditor()">Enable Editor</button>
+      </div>
+
+      <div class="output-container">
+        <div class="output-label">Output:</div>
+        <div class="output-box" id="output">Click "Get HTML Content" or "Get Text Content" to see the output here...</div>
+      </div>
+
+      <div class="info-box">
+        <p><strong>Features:</strong></p>
+        <p>• Basic formatting (bold, italic, underline, strikethrough)</p>
+        <p>• Headings (H1-H6)</p>
+        <p>• Text alignment (left, center, right, justify)</p>
+        <p>• Lists (ordered & unordered)</p>
+        <p>• Links, Images, Tables</p>
+        <p>• Code blocks</p>
+        <p>• Undo/Redo with keyboard shortcuts</p>
+        <p>• Keyboard shortcuts: <code>Ctrl+B</code> (Bold), <code>Ctrl+I</code> (Italic), <code>Ctrl+U</code> (Underline), <code>Ctrl+Z</code> (Undo), <code>Ctrl+Shift+Z</code> (Redo)</p>
+      </div>
+    </div>
+
+    <div class="demo-section">
+      <h2>Custom Toolbar Configuration</h2>
+      <div id="editor-custom"></div>
+      <div class="info-box">
+        <p>This editor has a custom toolbar with only selected buttons:</p>
+        <p><code>['bold', 'italic', '|', 'h1', 'h2', '|', 'link', 'image']</code></p>
+      </div>
+    </div>
+
+    <footer>
+      <p>BangEditor v1.0.0 - Built with TypeScript & Vite</p>
+    </footer>
+  </div>
+
+  <script type="module">
+    import BangEditor from '../src/index.ts';
+
+    // Initialize default editor
+    const editor = new BangEditor('#editor', {
+      placeholder: 'Start typing here...',
+      height: '400px',
+      onChange: (content) => {
+        console.log('Content changed:', content);
+      },
+      onFocus: () => {
+        console.log('Editor focused');
+      },
+      onBlur: () => {
+        console.log('Editor blurred');
+      }
+    });
+
+    // Initialize custom toolbar editor
+    const customEditor = new BangEditor('#editor-custom', {
+      placeholder: 'Editor with custom toolbar...',
+      height: '300px',
+      toolbar: ['bold', 'italic', '|', 'h1', 'h2', '|', 'link', 'image']
+    });
+
+    // Make editor available globally for demo buttons
+    window.editor = editor;
+
+    // Demo button functions
+    window.getContent = function() {
+      const content = editor.getContent();
+      document.getElementById('output').textContent = content;
+    };
+
+    window.getTextContent = function() {
+      const text = editor.getText();
+      document.getElementById('output').textContent = text;
+    };
+
+    window.setContent = function() {
+      editor.setContent(`
+        <h1>Welcome to BangEditor!</h1>
+        <p>This is a <strong>sample content</strong> with <em>various formatting</em> options.</p>
+        <h2>Features</h2>
+        <ul>
+          <li>Rich text editing</li>
+          <li>Multiple formatting options</li>
+          <li>Easy to integrate</li>
+        </ul>
+        <p>Try editing this content and click the buttons above to see the HTML output!</p>
+      `);
+    };
+
+    window.clearEditor = function() {
+      editor.clear();
+    };
+
+    window.disableEditor = function() {
+      editor.disable();
+    };
+
+    window.enableEditor = function() {
+      editor.enable();
+    };
+  </script>
+</body>
+</html>
